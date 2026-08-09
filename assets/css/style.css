@@ -1,0 +1,667 @@
+/* ====================================================
+   RESET & BASE
+   ==================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f4f8;
+    color: #333;
+}
+
+/* ====================================================
+   SIDEBAR
+   ==================================================== */
+.sidebar {
+    width: 270px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: linear-gradient(160deg, #0277bd 0%, #01579b 60%, #003c6e 100%);
+    color: #fff;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+/* Scrollbar sidebar */
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+/* Brand / Header */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 20px 18px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    background: rgba(0,0,0,0.08);
+    flex-shrink: 0;
+}
+
+/* Menu List */
+.sidebar ul {
+    list-style: none;
+    padding: 8px 0 20px;
+    margin: 0;
+    flex: 1;
+}
+
+.sidebar li {
+    margin: 0;
+}
+
+/* Section Divider */
+.sidebar-divider {
+    padding: 14px 20px 5px;
+    pointer-events: none;
+}
+
+.sidebar-divider span {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* Nav Item Link */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 0 24px 24px 0;
+    margin-right: 12px;
+    transition: all 0.22s ease;
+    position: relative;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.13);
+    color: #fff;
+    padding-left: 26px;
+}
+
+/* Active state */
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.95);
+    color: #0277bd;
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+}
+
+.nav-item.active .nav-icon svg {
+    stroke: #0277bd;
+}
+
+/* Nav Icon */
+.nav-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.nav-item.active .nav-icon {
+    opacity: 1;
+}
+
+/* Live Dot Animation */
+.live-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4cff91;
+    margin-left: auto;
+    box-shadow: 0 0 7px #4cff91;
+    animation: pulse-dot 1.6s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ====================================================
+   CONTENT AREA
+   ==================================================== */
+.content {
+    margin-left: 270px;
+    padding: 28px;
+    min-height: 100vh;
+}
+
+/* ====================================================
+   TABLE CARD
+   ==================================================== */
+.table-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+}
+
+/* Table Header — default */
+.table-header {
+    padding: 22px 28px;
+    border-bottom: 1px solid #eef0f4;
+}
+
+.table-header h2 {
+    margin: 0;
+    color: #1a2740;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+/* Sensor Header — richer layout */
+.sensor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 20px 28px;
+    background: linear-gradient(90deg, #f7faff 0%, #eef4ff 100%);
+    border-bottom: 1px solid #e3eaf5;
+}
+
+.sensor-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sensor-header-left svg {
+    color: #0277bd;
+    flex-shrink: 0;
+}
+
+.sensor-header-left h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a2740;
+}
+
+.sensor-meta {
+    font-size: 12.5px;
+    color: #7a8aaa;
+    background: #e9f0fb;
+    border: 1px solid #d1dfef;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.sensor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sensor-badge-type {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #0277bd;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(2,119,189,0.3);
+}
+
+/* ====================================================
+   TABLE RESPONSIVE
+   ==================================================== */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* ====================================================
+   MODERN TABLE (for table.php / legacy)
+   ==================================================== */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(90deg, #0277bd, #0288d1);
+    color: white;
+}
+
+.modern-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.modern-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f0f3f8;
+    color: #444;
+    font-size: 13.5px;
+}
+
+.modern-table tbody tr:nth-child(even) { background: #fafcff; }
+
+.modern-table tbody tr:hover {
+    background: #e8f4fd;
+    transition: .2s;
+}
+
+.modern-table tbody tr:last-child td { border-bottom: none; }
+
+/* ====================================================
+   DATATABLES OVERRIDES — selaraskan dengan modern-table
+   ==================================================== */
+
+/* Override DT thead agar sama dengan modern-table */
+table.dataTable.modern-table thead th,
+table.dataTable.modern-table thead td {
+    background: linear-gradient(90deg, #0277bd, #0288d1) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 14px 16px !important;
+    border-bottom: none !important;
+    white-space: nowrap;
+    text-align: left;
+}
+
+/* Sorting icons — pastikan tetap terlihat di background gelap */
+table.dataTable.modern-table thead th.sorting::after,
+table.dataTable.modern-table thead th.sorting_asc::after,
+table.dataTable.modern-table thead th.sorting_desc::after {
+    color: rgba(255,255,255,0.7) !important;
+    opacity: 1 !important;
+}
+
+/* Fallback untuk DT thead umum (non modern-table) */
+table.dataTable thead th,
+table.dataTable thead td {
+    background: linear-gradient(90deg, #0277bd, #0288d1) !important;
+    color: #fff !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    border-bottom: none !important;
+    white-space: nowrap;
+}
+
+/* Body rows */
+table.dataTable.modern-table tbody tr td {
+    padding: 13px 16px !important;
+    border-bottom: 1px solid #f0f3f8 !important;
+    color: #444;
+    font-size: 13.5px;
+}
+
+table.dataTable.modern-table tbody tr:nth-child(even) {
+    background-color: #fafcff !important;
+}
+
+table.dataTable.modern-table tbody tr:hover {
+    background-color: #e8f4fd !important;
+    transition: background-color .2s;
+}
+
+table.dataTable.modern-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+/* Hapus border DT default */
+table.dataTable,
+table.dataTable.no-footer {
+    border-bottom: none !important;
+}
+
+/* DT wrapper — hilangkan border */
+.dataTables_wrapper {
+    padding: 0 !important;
+}
+
+/* DataTables top area */
+.dt-top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid #eef0f4;
+    background: #fafcff;
+}
+
+/* DataTables bottom */
+.dt-bottom {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid #eef0f4;
+    background: #fafcff;
+    font-size: 13px;
+    color: #666;
+}
+
+/* DT Export Buttons */
+.dt-btn,
+.dt-buttons .dt-button {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px !important;
+    background: #fff !important;
+    border: 1px solid #d0dce8 !important;
+    border-radius: 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #0277bd !important;
+    cursor: pointer;
+    transition: all .18s ease !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+    text-shadow: none !important;
+}
+
+.dt-btn:hover,
+.dt-buttons .dt-button:hover {
+    background: #0277bd !important;
+    color: #fff !important;
+    border-color: #0277bd !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(2,119,189,0.25) !important;
+}
+
+/* DT Search Box */
+div.dataTables_filter {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+div.dataTables_filter label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+div.dataTables_filter input {
+    border: 1px solid #d0dce8;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    min-width: 220px;
+    margin-left: 4px !important;
+}
+
+div.dataTables_filter input:focus {
+    border-color: #0277bd;
+    box-shadow: 0 0 0 3px rgba(2,119,189,0.12);
+}
+
+/* DT Length select */
+div.dataTables_length label {
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+div.dataTables_length select {
+    border: 1px solid #d0dce8;
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 13px;
+    color: #333;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+}
+
+div.dataTables_length select:focus {
+    border-color: #0277bd;
+}
+
+/* DT Info */
+div.dataTables_info {
+    font-size: 13px;
+    color: #888;
+    padding: 0 !important;
+}
+
+/* DT Pagination */
+.dataTables_paginate {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.dataTables_paginate .paginate_button {
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 13px !important;
+    color: #0277bd !important;
+    border: 1px solid transparent !important;
+    background: none !important;
+    transition: all .15s !important;
+    cursor: pointer !important;
+    min-width: 30px;
+    text-align: center;
+}
+
+.dataTables_paginate .paginate_button.current,
+.dataTables_paginate .paginate_button.current:hover {
+    background: #0277bd !important;
+    color: #fff !important;
+    border-color: #0277bd !important;
+    box-shadow: 0 2px 8px rgba(2,119,189,0.2) !important;
+}
+
+.dataTables_paginate .paginate_button:hover:not(.current) {
+    background: #e8f4fd !important;
+    border-color: #c8e0f0 !important;
+    color: #0277bd !important;
+}
+
+.dataTables_paginate .paginate_button.disabled,
+.dataTables_paginate .paginate_button.disabled:hover {
+    color: #ccc !important;
+    cursor: default !important;
+    background: none !important;
+    border-color: transparent !important;
+}
+
+/* ====================================================
+   BADGES
+   ==================================================== */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.badge.success   { background: #e6f9f0; color: #1a8c52; border: 1px solid #a3e4c1; }
+.badge.danger    { background: #fdecea; color: #c0392b; border: 1px solid #f5b7b1; }
+.badge.warning   { background: #fff8e1; color: #b7830a; border: 1px solid #ffe082; }
+.badge.muted     { background: #f0f0f0; color: #888;    border: 1px solid #ddd;    }
+.badge.neutral   { background: #eef3ff; color: #3a57d7; border: 1px solid #c5d3f7; }
+
+.badge.timestamp {
+    background: #eef3ff;
+    color: #3a57d7;
+    border: 1px solid #c5d3f7;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11.5px;
+    cursor: help;
+}
+
+/* ====================================================
+   ROW HELPERS
+   ==================================================== */
+.row-num {
+    color: #bbb;
+    font-size: 12px;
+    text-align: center;
+    width: 50px;
+}
+
+.entity-id {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: #555;
+}
+
+/* ====================================================
+   LIVE API HEADER
+   ==================================================== */
+.live-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 18px 28px;
+    background: linear-gradient(90deg, #f7faff 0%, #eef4ff 100%);
+    border-bottom: 1px solid #e3eaf5;
+}
+
+.live-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.live-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2ecc71;
+    box-shadow: 0 0 8px #2ecc71;
+    animation: pulse-dot 1.4s infinite;
+    flex-shrink: 0;
+}
+
+.live-header-left h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a2740;
+}
+
+.live-meta {
+    font-size: 13px;
+    color: #888;
+}
+
+.live-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ====================================================
+   LIVE API — Filter & Refresh
+   ==================================================== */
+.live-filter-form {
+    display: flex;
+    align-items: center;
+}
+
+.live-filter-form select {
+    padding: 7px 12px;
+    border: 1px solid #d0dce8;
+    border-radius: 8px;
+    font-size: 13px;
+    background: #f7f9ff;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+}
+
+.live-filter-form select:focus {
+    border-color: #0277bd;
+    box-shadow: 0 0 0 3px rgba(2,119,189,0.12);
+}
+
+.btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #0288d1, #0277bd);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .2s;
+    box-shadow: 0 2px 8px rgba(2,119,189,0.3);
+}
+
+.btn-refresh:hover {
+    background: linear-gradient(135deg, #01579b, #003c6e);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(2,119,189,0.35);
+}
+
+.btn-refresh svg {
+    transition: transform .4s;
+}
+
+.btn-refresh:hover svg {
+    transform: rotate(180deg);
+}
+
+/* ====================================================
+   ERROR STATE
+   ==================================================== */
+.api-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 30px 28px;
+    padding: 16px 20px;
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5b7b1;
+    border-radius: 12px;
+    font-size: 14px;
+}
