@@ -70,6 +70,39 @@ foreach ($sensorMenus as $key => $cfg) {
 
         <?php endforeach; ?>
 
+        <!-- Data Quality -->
+        <li class="sidebar-divider">
+            <span>Data Quality</span>
+        </li>
+
+        <li>
+            <a href="?page=quality"
+               class="nav-item <?= ($currentPage === 'quality') ? 'active' : '' ?>">
+                <span class="nav-icon"><?= sensor_icon_sidebar('bar-chart') ?></span>
+                Quality Assessment
+            </a>
+        </li>
+
+        <li>
+            <a href="?page=mapping"
+               class="nav-item <?= ($currentPage === 'mapping') ? 'active' : '' ?>">
+                <span class="nav-icon"><?= sensor_icon_sidebar('database') ?></span>
+                Sensor Mapping
+            </a>
+        </li>
+
+        <!-- DB Tools -->
+        <li class="sidebar-divider">
+            <span>Tools</span>
+        </li>
+
+        <li>
+            <a href="?page=db"
+               class="nav-item <?= ($currentPage === 'db') ? 'active' : '' ?>">
+                <span class="nav-icon"><?= sensor_icon_sidebar('database') ?></span>
+                Raw DB Explorer
+            </a>
+        </li>
 
     </ul>
 
@@ -91,6 +124,7 @@ function sensor_icon_sidebar(string $name): string {
         'beaker'       => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 3h15M6 3v10l-3.5 6.5A1 1 0 003.37 21h17.26a1 1 0 00.87-1.5L18 13V3"></path><line x1="6" y1="14" x2="18" y2="14"></line></svg>',
         'radio'        => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 010 8.49"></path><path d="M7.76 7.76a6 6 0 000 8.49"></path><path d="M20.49 4.51a12 12 0 010 16.97"></path><path d="M3.51 4.51a12 12 0 000 16.97"></path></svg>',
         'database'     => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>',
+        'bar-chart'    => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg>',
     ];
     return $icons[$name] ?? $icons['database'];
 }

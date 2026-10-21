@@ -1,81 +1,146 @@
-# CLAUDE.md
+# Home Assistant — IoT Sensor Data Quality System
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Sistem PHP untuk preprocessing dan pengukuran kualitas data sensor IoT dari Home Assistant.
 
-## Project Overview
+---
 
-A PHP web dashboard for viewing and syncing Home Assistant data. It connects to:
-- A **live Home Assistant REST API** (`http://homeassistant.local:8123`) for real-time entity states
-- A **local PostgreSQL database** (`home_assistant` on port 5432) that mirrors HA data for offline access and historical querying
+## Arsitektur Sistem
 
-The app runs under **Laragon** at `http://localhost/home-assistant/`.
-
-## Architecture
-
-All routing is handled by `index.php` via a `?page=` GET parameter:
-
-| `?page=` | File included | Purpose |
-|---|---|---|
-| `live` | `api.php` | Fetches live states from HA REST API; falls back to `api_states` table if offline |
-| `sensor` | `sensor_view.php` | Queries historical sensor/event data from the relational PostgreSQL tables |
-| `db` + `?table=` | `table.php` | Generic raw table browser (first 100 rows of any table) |
-
-**Config files:**
-- `config.php` — PostgreSQL PDO connection (exposes `$db`)
-- `config_api.php` — Home Assistant URL (`$ha_url`) and Bearer token (`$ha_token`)
-
-**Sensor system (`sensor_config.php` + `sensor_view.php`):**  
-`sensor_config.php` defines `$sensorMenus` — an associative array where each key is a menu slug and each value is a config array describing `type`, `filter`, `columns`, `icon`, etc. `sensor_view.php` reads the `?sensor=` param, looks up the config, then dispatches to one of six query types: `akar`, `sensor`, `kandungan`, `event`, `event_callservice`, `event_change`. The sidebar (`sidebar.php`) auto-generates nav links grouped by `section` from the same config.
-
-**Relational DB schema (mirrored from HA):**
 ```
-states_meta     (metadata_id, entity_id)
-state_attributes (attributes_id, shared_attrs JSON)
-states          (state_id, metadata_id→, attributes_id→, state, last_changed_ts, last_updated_ts, last_reported_ts)
-events          (event_id, event_type_id→, data_id→, time_fired_ts)
-event_types     (event_type_id, event_type)
-event_data      (data_id, hash, shared_data JSON)
+Home Assistant REST API
+        │
+        ▼
+scheduler.php  ──────────────────────────────────────────────────────────┐
+        │                                                                 │
+        ▼                                                                 │
+app/Jobs/ProcessSensorData.php  (Orchestrator Pipeline)                  │
+        │                                                                 │
+        ├─── SensorMappingService     → Identifikasi & Standardisasi     │
+        ├─── MissingValueService      → Deteksi Missing + Imputasi       │
+        ├─── AnomalyDetectionService  → IQR + Domain + Temporal          │
+        ├─── DataCleaningService      → Pipeline Cleaning                │
+        └─── DataQualityService       → Completeness/Validity/Consistency/Timeliness
+                                                                          │
+                                                     PostgreSQL (clean DB)┘
+                                                              │
+                                                              ▼
+                                                    index.php (Front Controller)
+                                                              │
+                                          ┌───────────────────┼───────────────────┐
+                                          ▼                   ▼                   ▼
+                                   quality_view.php   mapping_view.php    sensor_view.php
+                                   (Quality Dashboard) (Sensor Mapping)   (Data Historis)
 ```
-Timestamps in `states` are Unix epoch floats. Sensor queries join these three tables and use `ILIKE` for attribute JSON filtering.
 
-**Scheduler (`scheduler.php`):**  
-Fetches multiple HA API endpoints (`/api/states`, `/api/history/period/...`, `/api/logbook/...`, `/api/states/<entity_id>`, `/api/error_log`, `/api/camera_proxy/...`, `/api/calendars/...`) and upserts into corresponding `api_*` tables using `sync_to_db()`. Deduplication is timestamp-based (skips rows where `entity_id` + timestamp already exist). Triggered automatically at 00:01 via the Service Worker (`sw.js`), with a client-side backup trigger at 20:55 from `index.php`.
+---
 
-## Running the App
+## Struktur Folder
 
-Open `http://localhost/home-assistant/` in a browser (served by Laragon/Apache+PHP). No build step required.
+```
+app/
+├── Models/
+│   ├── Sensor.php          → entitas sensor + mapping (tabel: sensor_mapping)
+│   ├── SensorReading.php   → data point per sensor  (tabel: sensor_readings)
+│   └── SensorQuality.php   → hasil quality assess   (tabel: sensor_quality)
+│
+├── Services/
+│   ├── SensorMappingService.php    → standardisasi entitas, pattern matching
+│   ├── MissingValueService.php     → deteksi NULL/unknown/unavailable, timestamp gap, imputasi linear
+│   ├── AnomalyDetectionService.php → IQR, domain validation, temporal validation
+│   ├── DataCleaningService.php     → pipeline cleaning + persist ke DB
+│   └── DataQualityService.php      → Completeness, Validity, Consistency, Timeliness
+│
+└── Jobs/
+    └── ProcessSensorData.php  → orchestrator full pipeline
+```
 
-To manually trigger the scheduler sync:
+---
+
+## File Utama
+
+| File | Fungsi |
+|---|---|
+| `index.php` | Front controller — routing `?page=` |
+| `scheduler.php` | Entry point pipeline (HTTP/CLI/cron) |
+| `api.php` | Live view data real-time dari HA |
+| `sensor_view.php` | Viewer data historis (DataTables) |
+| `quality_view.php` | Dashboard Data Quality Assessment |
+| `mapping_view.php` | Tabel Sensor Mapping + re-mapping trigger |
+| `table.php` | Raw DB explorer |
+| `sidebar.php` | Navigasi sidebar (membaca sensor_config.php) |
+| `sensor_config.php` | Konfigurasi menu sensor |
+| `config.php` | Koneksi PostgreSQL |
+| `config_api.php` | URL + token Home Assistant |
+| `sw.js` | Service Worker — trigger scheduler pukul 00:01 |
+
+---
+
+## Tabel Database (PostgreSQL)
+
+| Tabel | Keterangan |
+|---|---|
+| `sensor_mapping` | Mapping entity_id → standard_name, category, unit |
+| `sensor_readings` | Data point sensor: value, status, is_imputed, is_anomaly |
+| `sensor_quality` | Hasil quality assessment per sensor per periode |
+| `scheduler_logs` | Log eksekusi pipeline |
+| `api_states` | Snapshot raw states dari HA (existing) |
+| `api_events` | Snapshot event log dari HA (existing) |
+
+---
+
+## Status Data
+
+Setiap `sensor_readings.status` dapat bernilai:
+
+| Status | Keterangan |
+|---|---|
+| `normal` | Nilai valid, tidak ada masalah |
+| `missing` | NULL, empty, unknown, unavailable |
+| `imputed` | Diisi oleh interpolasi linear |
+| `candidate_anomaly` | Terdeteksi anomali statistik/temporal |
+| `invalid` | Melanggar batas domain sensor |
+| `corrected` | Sudah dikoreksi secara manual |
+
+---
+
+## Cara Menjalankan Pipeline
+
+**CLI:**
+```bash
+php app/Jobs/ProcessSensorData.php
+php app/Jobs/ProcessSensorData.php --date=2026-09-25
+```
+
+**HTTP:**
 ```
 http://localhost/home-assistant/scheduler.php
-```
-Or with a specific date to backfill:
-```
-http://localhost/home-assistant/scheduler.php?date=2026-08-01
+http://localhost/home-assistant/scheduler.php?date=2026-09-25
 ```
 
-## Configuration
+---
 
-**To change the HA connection**, edit `config_api.php`:
-- `$ha_url` — base URL of your Home Assistant instance
-- `$ha_token` — Long-lived access token from HA profile settings
+## Menambah Menu Sensor Baru
 
-**To change the PostgreSQL connection**, edit `config.php` (host, port, dbname, user, password).
+Edit `sensor_config.php`, tambahkan entry baru ke array `$sensorMenus`:
 
-## Adding a New Sensor Menu
+```php
+'sensor_baru' => [
+    'label'   => 'Label Menu',
+    'icon'    => 'thermometer',
+    'section' => 'Nama Seksi',
+    'type'    => 'sensor',
+    'filter'  => '%entity_id_pattern%',
+    'columns' => ['Waktu', 'Entitas', 'Nilai', 'Atribut'],
+],
+```
 
-Add an entry to `$sensorMenus` in `sensor_config.php`. The `type` field controls the query path in `sensor_view.php`:
-- `sensor` — joins `states`/`state_attributes`/`states_meta`, filters by `shared_attrs ILIKE`
-- `kandungan` — same join, but filters by exact `entity_id` and reads a specific attribute field (`field1`–`field7`)
-- `akar` — same join, shows entity metadata attributes
-- `event` / `event_callservice` / `event_change` — queries `events`/`event_types`/`event_data`
+---
 
-The sidebar and icon rendering pick up new entries automatically. Icons must be one of the named SVG strings in `sensor_icon()` / `sensor_icon_sidebar()` inside `sensor_view.php` and `sidebar.php`.
+## Metrik Kualitas Data
 
-## Key Conventions
-
-- All timestamps are stored as Unix epoch floats; display converts to `Asia/Jakarta` timezone using `DateTimeZone`.
-- `htmlspecialchars()` is used consistently on all output to prevent XSS.
-- The `kandungan` type reads soil sensor values from a single `sensor.sensor_smartfarm` entity whose multiple measurements are packed into attributes (`field1`–`field7`).
-- `table.php` is a raw debug viewer — it directly interpolates `$_GET['table']` into a SQL query with no sanitization; use only on localhost.
-- DataTables (jQuery-based, loaded from CDN) is used in `sensor_view.php` for pagination, search, and CSV/Excel/PDF export.
+| Dimensi | Rumus |
+|---|---|
+| Completeness | `(1 − missing/total) × 100%` |
+| Validity | `(valid/diperiksa) × 100%` |
+| Consistency | `(termapping/total) × 100%` (rata-rata naming+unit+category) |
+| Timeliness | `(laporan_tepat_waktu/laporan_diharapkan) × 100%` |

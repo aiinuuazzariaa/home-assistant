@@ -2,7 +2,7 @@
 
 // connect database postgresql
 $db = new PDO(
-    "pgsql:host=localhost;port=5432;dbname=home_assistant;user=postgres;password=root"
+    "pgsql:host=localhost;port=5432;dbname=home_assistant_v2;user=postgres;password=root"
 );
 
 // exception jika ada error query

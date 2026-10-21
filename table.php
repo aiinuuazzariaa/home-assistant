@@ -2,21 +2,30 @@
 
 require 'config.php';
 
-$table = $_GET['table'] ?? 'entities';
+$table = $_GET['table'] ?? 'states';
+
+$allowedTables = [
+    'sensor_mapping', 'sensor_readings', 'sensor_quality',
+    'scheduler_logs', 'states', 'states_meta', 'state_attributes',
+    'events', 'event_types', 'event_data', 'api_states', 'api_events'
+];
+
+if (!in_array($table, $allowedTables, true)) {
+    echo '<div class="table-card"><div class="table-header"><h2>Tabel tidak valid atau tidak diizinkan.</h2></div></div>';
+    return;
+}
 
 // get data tabel
-$data = $db->query("
-SELECT *
-FROM \"$table\"
-LIMIT 100
-")->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $db->prepare('SELECT * FROM "' . $table . '" LIMIT 100');
+$stmt->execute();
+$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 
 <div class="table-card">
 
     <div class="table-header">
-        <h2><?= ucwords(str_replace('_', ' ', $table)) ?></h2>
+        <h2><?= htmlspecialchars(ucwords(str_replace('_', ' ', $table)), ENT_QUOTES, 'UTF-8') ?></h2>
     </div>
 
     <div class="table-responsive">
