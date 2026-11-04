@@ -44,6 +44,18 @@ class ProcessSensorData
     private DataCleaningService   $cleaningService;
     private DataQualityService    $qualityService;
     private string                $targetDate;
+    private bool                  $isHaOffline = false;
+    private bool                  $verbose = true;
+
+    public function setVerbose(bool $verbose): void
+    {
+        $this->verbose = $verbose;
+    }
+
+    public function setHaOffline(bool $offline): void
+    {
+        $this->isHaOffline = $offline;
+    }
 
     public function __construct(\PDO $db, string $haUrl, string $haToken, string $targetDate = null)
     {
@@ -94,21 +106,26 @@ class ProcessSensorData
     // -----------------------------------------------------------------------
     // Jalankan full pipeline
     // -----------------------------------------------------------------------
-    public function run(): array
+    public function run(?array $preloadedStates = null): array
     {
         $this->log("=== ProcessSensorData START | date: {$this->targetDate} ===");
         $summary = ['date' => $this->targetDate, 'entities_processed' => 0, 'readings_saved' => 0, 'errors' => []];
 
         try {
             // STEP 1: Ambil data dari Home Assistant /api/states atau DB lokal
-            $this->log('Fetching states (HA API or local DB fallback)...');
-            $states = $this->getStates();
+            if (!empty($preloadedStates)) {
+                $states = $preloadedStates;
+                $this->log('Using ' . count($states) . ' preloaded states');
+            } else {
+                $this->log('Fetching states (HA API or local DB fallback)...');
+                $states = $this->getStates();
+            }
 
             if (empty($states)) {
                 $this->log('No states available to process');
                 return $summary;
             }
-            $this->log('Fetched ' . count($states) . ' entities');
+            $this->log('Processing ' . count($states) . ' entities');
 
             // STEP 2: Identifikasi & Standardisasi Sensor
             $this->log('Running SensorMappingService...');
@@ -144,13 +161,16 @@ class ProcessSensorData
     // -----------------------------------------------------------------------
     private function getStates(): array
     {
-        try {
-            $states = $this->fetchHaApi('/api/states');
-            if (!empty($states) && is_array($states)) {
-                return $states;
+        if (!$this->isHaOffline) {
+            try {
+                $states = $this->fetchHaApi('/api/states');
+                if (!empty($states) && is_array($states)) {
+                    return $states;
+                }
+            } catch (\Throwable $e) {
+                $this->isHaOffline = true;
+                $this->log("HA API unavailable ({$e->getMessage()}), using local DB fallback");
             }
-        } catch (\Throwable $e) {
-            $this->log("HA API unavailable ({$e->getMessage()}), using local DB fallback");
         }
 
         try {
@@ -199,24 +219,27 @@ class ProcessSensorData
         $rawReadings = [];
 
         // 1. Coba ambil history dari HA API
-        $periodStart = $this->targetDate . 'T00:00:00';
-        $historyUrl  = "/api/history/period/{$periodStart}?filter_entity_id={$entityId}&end_time={$this->targetDate}T23:59:59";
+        if (!$this->isHaOffline) {
+            $periodStart = $this->targetDate . 'T00:00:00';
+            $historyUrl  = "/api/history/period/{$periodStart}?filter_entity_id={$entityId}&end_time={$this->targetDate}T23:59:59";
 
-        try {
-            $history = $this->fetchHaApi($historyUrl);
-            if (!empty($history) && is_array($history[0])) {
-                foreach ($history[0] as $entry) {
-                    $rawReadings[] = [
-                        'entity_id'   => $entityId,
-                        'state'       => $entry['state'] ?? null,
-                        'recorded_at' => isset($entry['last_changed'])
-                            ? date('Y-m-d H:i:s', strtotime($entry['last_changed']))
-                            : date('Y-m-d H:i:s'),
-                    ];
+            try {
+                $history = $this->fetchHaApi($historyUrl);
+                if (!empty($history) && is_array($history[0])) {
+                    foreach ($history[0] as $entry) {
+                        $rawReadings[] = [
+                            'entity_id'   => $entityId,
+                            'state'       => $entry['state'] ?? null,
+                            'recorded_at' => isset($entry['last_changed'])
+                                ? date('Y-m-d H:i:s', strtotime($entry['last_changed']))
+                                : date('Y-m-d H:i:s'),
+                        ];
+                    }
                 }
+            } catch (\Throwable $e) {
+                // HA API offline
+                $this->isHaOffline = true;
             }
-        } catch (\Throwable $e) {
-            // HA API offline
         }
 
         // 2. Fallback: ambil history dari tabel states jika HA API kosong
@@ -247,6 +270,17 @@ class ProcessSensorData
             } catch (\Throwable $e) {
                 // Ignore DB error
             }
+        }
+
+        // 3. Fallback: jika history kosong, gunakan state live saat ini
+        if (empty($rawReadings) && array_key_exists('current_state', $mapped)) {
+            $rawReadings[] = [
+                'entity_id'   => $entityId,
+                'state'       => $mapped['current_state'],
+                'recorded_at' => !empty($mapped['last_updated'])
+                    ? date('Y-m-d H:i:s', strtotime($mapped['last_updated']))
+                    : date('Y-m-d H:i:s'),
+            ];
         }
 
         if (empty($rawReadings)) {
@@ -323,7 +357,9 @@ class ProcessSensorData
     private function log(string $message, bool $saveToDb = true): void
     {
         $ts = date('Y-m-d H:i:s');
-        echo "[{$ts}] {$message}\n";
+        if ($this->verbose && php_sapi_name() === 'cli') {
+            echo "[{$ts}] {$message}\n";
+        }
 
         if ($saveToDb) {
             try {

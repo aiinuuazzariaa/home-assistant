@@ -37,7 +37,7 @@ class MissingValueService
     // -----------------------------------------------------------------------
     // Proses satu pembacaan — tentukan status dan nilai numerik
     // -----------------------------------------------------------------------
-    public function processReading(mixed $rawValue): array
+    public function processReading(mixed $rawValue, string $measurementType = ''): array
     {
         if ($this->isMissingValue($rawValue)) {
             return [
@@ -48,14 +48,68 @@ class MissingValueService
             ];
         }
 
-        $numericValue = is_numeric($rawValue) ? (float) $rawValue : null;
+        $numericValue = $this->sanitizeNumber($rawValue, $measurementType);
 
         return [
             'value'      => $numericValue,
             'raw_value'  => (string) $rawValue,
-            'status'     => 'normal',
+            'status'     => $numericValue !== null ? 'normal' : 'missing',
             'is_imputed' => false,
         ];
+    }
+
+    // -----------------------------------------------------------------------
+    // Sanitasi 3 tipe bilangan (Integer, Desimal, Persentase) - Panduan 6.2
+    // -----------------------------------------------------------------------
+    public function sanitizeNumber(mixed $rawValue, string $measurementType = ''): ?float
+    {
+        $str = trim((string) $rawValue);
+
+        // 1. Tipe Persentase
+        if (in_array($measurementType, ['Humidity', 'Moisture', 'Battery', 'Percentage']) || str_ends_with($str, '%')) {
+            return $this->handlePercentage($rawValue);
+        }
+
+        // 2. Tipe Integer
+        if (in_array($measurementType, ['Counter', 'Count', 'Integer'])) {
+            return (float) $this->handleInteger($rawValue);
+        }
+
+        // 3. Tipe Desimal (Default)
+        return $this->handleDecimal($rawValue);
+    }
+
+    public function handleInteger(mixed $value): int
+    {
+        $clean = preg_replace('/[^0-9.-]/', '', str_replace(',', '.', (string) $value));
+        return (int) round((float) $clean);
+    }
+
+    public function handleDecimal(mixed $value, int $precision = 2): ?float
+    {
+        $clean = preg_replace('/[^0-9.-]/', '', str_replace(',', '.', (string) $value));
+        if ($clean === '' || !is_numeric($clean)) {
+            return null;
+        }
+        return round((float) $clean, $precision);
+    }
+
+    public function handlePercentage(mixed $value): ?float
+    {
+        $str = (string) $value;
+        $clean = preg_replace('/[^0-9.-]/', '', str_replace(',', '.', $str));
+        if ($clean === '' || !is_numeric($clean)) {
+            return null;
+        }
+        $num = (float) $clean;
+
+        // Normalisasi skala 0.0 - 1.0 ke 0 - 100
+        if ($num >= 0.0 && $num <= 1.0 && str_contains($str, '.')) {
+            $num *= 100;
+        }
+
+        // Clamping domain 0% - 100%
+        return round(min(100.0, max(0.0, $num)), 2);
     }
 
     // -----------------------------------------------------------------------

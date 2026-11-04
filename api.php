@@ -64,6 +64,28 @@ if ($response === false) {
     }
 }
 
+// Jalankan pipeline ETL otomatis ke database PostgreSQL (sensor_mapping, sensor_readings, sensor_quality)
+$pipelineSummary = null;
+$pipelineError   = null;
+$allEntities     = ($response === false) ? $data : ($decoded ?? []);
+
+if (!empty($allEntities)) {
+    try {
+        if (!isset($db)) {
+            require_once 'config.php';
+        }
+        require_once __DIR__ . '/app/Jobs/ProcessSensorData.php';
+        $job = new ProcessSensorData($db, $ha_url, $ha_token);
+        $job->setVerbose(false);
+        $job->setHaOffline($isOffline);
+        $job->initSchema();
+        $pipelineSummary = $job->run($allEntities);
+    } catch (\Throwable $e) {
+        $pipelineError = $e->getMessage();
+        error_log("Live API Pipeline Error: " . $e->getMessage());
+    }
+}
+
 // filter domain
 if ($filter !== '' && count($data) > 0) {
     $data = array_values(array_filter($data, function($item) use ($filter) {
@@ -92,6 +114,17 @@ ksort($domains);
                 Diperbarui: <strong><?= $fetchedAt ?></strong>
                 &nbsp;·&nbsp;
                 <?= count($data) ?> entity
+                <?php if ($pipelineSummary): ?>
+                    &nbsp;·&nbsp;
+                    <span class="badge success" style="font-size: 11px; padding: 2px 7px;">
+                        ✓ ETL: <?= $pipelineSummary['readings_saved'] ?> data diproses (<?= $pipelineSummary['entities_processed'] ?> sensor)
+                    </span>
+                <?php elseif ($pipelineError): ?>
+                    &nbsp;·&nbsp;
+                    <span class="badge danger" style="font-size: 11px; padding: 2px 7px;">
+                        ⚠️ ETL Error: <?= htmlspecialchars($pipelineError) ?>
+                    </span>
+                <?php endif; ?>
             </span>
         </div>
 

@@ -91,6 +91,8 @@ class SensorMappingService
             }
 
             $mapped = $this->mapEntity($entityId, $attributes);
+            $mapped['current_state'] = $state['state'] ?? null;
+            $mapped['last_updated']  = $state['last_updated'] ?? null;
             Sensor::upsert($mapped);
             $results[] = $mapped;
         }

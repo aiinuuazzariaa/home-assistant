@@ -37,10 +37,10 @@ class DataCleaningService
     // -----------------------------------------------------------------------
     public function clean(array $rawReadings, string $measurementType = '', int $expectedInterval = 300): array
     {
-        // STEP 1: Proses setiap reading — cek missing value
+        // STEP 1: Proses setiap reading — cek missing value & sanitasi tipe bilangan (Panduan 6.2)
         $processed = [];
         foreach ($rawReadings as $raw) {
-            $reading             = $this->missingService->processReading($raw['state'] ?? $raw['value'] ?? null);
+            $reading             = $this->missingService->processReading($raw['state'] ?? $raw['value'] ?? null, $measurementType);
             $reading['entity_id']   = $raw['entity_id']   ?? '';
             $reading['recorded_at'] = $raw['recorded_at'] ?? $raw['last_changed'] ?? date('Y-m-d H:i:s');
             $reading['is_anomaly']  = false;
